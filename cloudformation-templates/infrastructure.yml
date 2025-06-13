@@ -20,12 +20,6 @@ Parameters:
     Description: Subnet ID
     Type: AWS::EC2::Subnet::Id
 
-Resources:
-  ImageRepository:
-    Type: AWS::ECR::Repository
-    Properties:
-      RepositoryName: !Sub "github-actions-${EnvironmentName}"
-
   # ECS Resources
   ECSCluster:
     Type: AWS::ECS::Cluster

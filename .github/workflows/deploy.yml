@@ -52,7 +52,7 @@ jobs:
       id: creds
       uses: aws-actions/configure-aws-credentials@v4
       with:
-        role-to-assume: arn:aws:iam::388276022184:role/Admin
+        role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/github-actions-cloudformation-deploy-role
         role-session-name: DeployInfra
         aws-region: us-east-2
 
@@ -74,7 +74,7 @@ jobs:
       with:
         name: ${{ steps.env-name.outputs.environment }}-infra
         template: cloudformation-templates/infrastructure.yml
-        role-arn: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/Admin
+        role-arn: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/github-actions-cloudformation-stack-role
         no-fail-on-empty-changeset: "1"
         parameter-overrides: >-
           EnvironmentName=${{ steps.env-name.outputs.environment }},
