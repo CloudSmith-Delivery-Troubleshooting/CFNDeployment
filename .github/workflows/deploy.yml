@@ -148,3 +148,10 @@ jobs:
         URL: ${{ steps.service-stack.outputs.ServiceURL }}
       run: |
         echo "Service URL: $URL"
+
+    - name: Show CloudFormation Stack Events on Failure
+      if: failure()
+      run: |
+        STACK_NAME="${{ steps.env-name.outputs.environment }}-infra"
+        echo "Fetching failure events for stack: $STACK_NAME"
+        aws cloudformation describe-stack-events --stack-name "$STACK_NAME" --query "StackEvents[?ResourceStatus=='CREATE_FAILED'].[LogicalResourceId,ResourceStatusReason]" --output table
