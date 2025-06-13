@@ -12,7 +12,10 @@
 on:
   push:
     branches:
-      - master
+      - "**"
+  pull_request:
+    branches:
+      - main
 
 name: Deploy
 
@@ -49,7 +52,7 @@ jobs:
       id: creds
       uses: aws-actions/configure-aws-credentials@v4
       with:
-        role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/github-actions-cloudformation-deploy-role
+        role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/Admin
         role-session-name: DeployInfra
         aws-region: us-east-2
 
