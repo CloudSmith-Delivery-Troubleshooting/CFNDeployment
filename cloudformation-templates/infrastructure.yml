@@ -20,6 +20,13 @@ Parameters:
     Description: Subnet ID
     Type: AWS::EC2::Subnet::Id
 
+Resources:
+  # ECR Repository
+  ImageRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: reponame
+
   # ECS Resources
   ECSCluster:
     Type: AWS::ECS::Cluster
