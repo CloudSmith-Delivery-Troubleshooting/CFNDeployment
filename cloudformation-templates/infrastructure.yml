@@ -25,7 +25,7 @@ Resources:
   ImageRepository:
     Type: AWS::ECR::Repository
     Properties:
-      RepositoryName: reponame
+      RepositoryName: repoName*
 
   # ECS Resources
   ECSCluster:
