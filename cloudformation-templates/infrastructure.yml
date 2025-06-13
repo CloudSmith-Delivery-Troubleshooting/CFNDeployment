@@ -26,6 +26,21 @@ Resources:
     Type: AWS::ECR::Repository
     Properties:
       RepositoryName: reponame
+# EC2 Instance with short timeout
+  EC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      SubnetId: !Ref PublicSubnetOne
+      SecurityGroupIds:
+        - !Ref ContainerSecurityGroup
+      ImageId: ami-0c55b159cbfafe1f0  # Amazon Linux 2 AMI (adjust for your region)
+      Tags:
+        - Key: Name
+          Value: !Sub "${EnvironmentName}-test-instance"
+    CreationPolicy:
+      ResourceSignal:
+        Timeout: PT10S
 
   # ECS Resources
   ECSCluster:
