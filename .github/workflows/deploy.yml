@@ -81,6 +81,36 @@ jobs:
           VPC=${{ steps.vpc.outputs.vpc-id }},
           PublicSubnetOne=${{ steps.vpc.outputs.subnet-one }},
           PublicSubnetTwo=${{ steps.vpc.outputs.subnet-two }}
+        
+    - name: Check CloudFormation Stack Status
+      if: ${{ always() }}
+      run: |
+        STACK_NAME="${{ steps.env-name.outputs.environment }}-infra"
+        echo "Checking status for stack: $STACK_NAME"
+        
+        # Get stack status
+        STACK_STATUS=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" --query "Stacks[0].StackStatus" --output text || echo "STACK_NOT_FOUND")
+        echo "Stack status: $STACK_STATUS"
+        
+        # If stack creation failed, get the failed resources and their reasons
+        if [[ "$STACK_STATUS" == *FAILED* || "$STACK_STATUS" == *ROLLBACK* ]]; then
+          echo "::group::Failed Resources and Reasons"
+          aws cloudformation describe-stack-events \
+            --stack-name "$STACK_NAME" \
+            --query "StackEvents[?ResourceStatus=='CREATE_FAILED' || ResourceStatus=='UPDATE_FAILED'].[Timestamp,LogicalResourceId,ResourceType,ResourceStatusReason]" \
+            --output table
+          echo "::endgroup::"
+          
+          # Get detailed error for specific resources if needed
+          echo "::group::Resource Details"
+          aws cloudformation describe-stack-resources \
+            --stack-name "$STACK_NAME" \
+            --query "StackResources[?ResourceStatus=='CREATE_FAILED' || ResourceStatus=='UPDATE_FAILED']" \
+            --output table
+          echo "::endgroup::"
+          
+          exit 1
+        fi
 
   # Build and deploy a Docker image to an ECS service through CloudFormation.
   #
@@ -142,6 +172,26 @@ jobs:
           EnvironmentName=${{ needs.deploy-infrastructure.outputs.env-name }},
           ServiceName=webapp,
           ImageUrl=${{ steps.build-image.outputs.image }}
+          
+    - name: Check Service Stack Status
+      if: ${{ always() }}
+      run: |
+        STACK_NAME="${{ needs.deploy-infrastructure.outputs.env-name }}-webapp"
+        echo "Checking status for service stack: $STACK_NAME"
+        
+        # Get stack status
+        STACK_STATUS=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" --query "Stacks[0].StackStatus" --output text || echo "STACK_NOT_FOUND")
+        echo "Service stack status: $STACK_STATUS"
+        
+        # If stack creation failed, get the failed resources and their reasons
+        if [[ "$STACK_STATUS" == *FAILED* || "$STACK_STATUS" == *ROLLBACK* ]]; then
+          echo "::group::Failed Service Resources and Reasons"
+          aws cloudformation describe-stack-events \
+            --stack-name "$STACK_NAME" \
+            --query "StackEvents[?ResourceStatus=='CREATE_FAILED' || ResourceStatus=='UPDATE_FAILED'].[Timestamp,LogicalResourceId,ResourceType,ResourceStatusReason]" \
+            --output table
+          echo "::endgroup::"
+        fi
 
     - name: Print service URL
       env:
