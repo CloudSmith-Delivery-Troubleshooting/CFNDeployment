@@ -82,6 +82,37 @@ jobs:
           PublicSubnetOne=${{ steps.vpc.outputs.subnet-one }},
           PublicSubnetTwo=${{ steps.vpc.outputs.subnet-two }}
 
+    - name: Check CloudFormation Stack Status
+      if: failure()
+      run: |
+            STACK_NAME="${{ steps.env-name.outputs.environment }}-infra"
+            echo "Checking status for stack: $STACK_NAME"
+
+            # Get stack status
+            STACK_STATUS=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" --query "Stacks[0].StackStatus" --output text || echo "STACK_NOT_FOUND")
+            echo "Stack status: $STACK_STATUS"
+
+            # If stack creation failed, get the failed resources and their reasons
+            if [[ "$STACK_STATUS" == *FAILED* || "$STACK_STATUS" == *ROLLBACK* ]]; then
+              # Get the timestamp of the most recent stack update
+              STACK_LAST_UPDATED=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" --query "Stacks[0].LastUpdatedTime || Stacks[0].CreationTime" --output text)
+              echo "Stack last updated: $STACK_LAST_UPDATED"
+
+              # Convert to seconds since epoch for comparison
+              LAST_UPDATE_EPOCH=$(date -d "$STACK_LAST_UPDATED" +%s)
+              # Get events from 5 minutes before the update started
+              FILTER_TIME=$(date -d "@$((LAST_UPDATE_EPOCH - 300))" -u +"%Y-%m-%dT%H:%M:%SZ")
+
+              echo "::group::Failed Resources from Current Deployment"
+              aws cloudformation describe-stack-events \
+                --stack-name "$STACK_NAME" \
+                --query "StackEvents[?Timestamp>='${FILTER_TIME}' && (ResourceStatus=='CREATE_FAILED' || ResourceStatus=='UPDATE_FAILED')].[Timestamp,LogicalResourceId,ResourceType,ResourceStatusReason]" \
+                --output table
+              echo "::endgroup::"
+
+              exit 1
+            fi
+
   # Build and deploy a Docker image to an ECS service through CloudFormation.
   #
   # This job can be copied multiple times to deploy different microservices
@@ -142,6 +173,35 @@ jobs:
           EnvironmentName=${{ needs.deploy-infrastructure.outputs.env-name }},
           ServiceName=webapp,
           ImageUrl=${{ steps.build-image.outputs.image }}
+
+    - name: Check Service Stack Status
+      if: failure()
+      run: |
+        STACK_NAME="${{ needs.deploy-infrastructure.outputs.env-name }}-webapp"
+        echo "Checking status for service stack: $STACK_NAME"
+
+        # Get stack status
+        STACK_STATUS=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" --query "Stacks[0].StackStatus" --output text || echo "STACK_NOT_FOUND")
+        echo "Service stack status: $STACK_STATUS"
+
+        # If stack creation failed, get the failed resources and their reasons
+        if [[ "$STACK_STATUS" == *FAILED* || "$STACK_STATUS" == *ROLLBACK* ]]; then
+          # Get the timestamp of the most recent stack update
+          STACK_LAST_UPDATED=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" --query "Stacks[0].LastUpdatedTime || Stacks[0].CreationTime" --output text)
+          echo "Stack last updated: $STACK_LAST_UPDATED"
+
+          # Convert to seconds since epoch for comparison
+          LAST_UPDATE_EPOCH=$(date -d "$STACK_LAST_UPDATED" +%s)
+          # Get events from 5 minutes before the update started
+          FILTER_TIME=$(date -d "@$((LAST_UPDATE_EPOCH - 300))" -u +"%Y-%m-%dT%H:%M:%SZ")
+
+          echo "::group::Failed Service Resources from Current Deployment"
+          aws cloudformation describe-stack-events \
+            --stack-name "$STACK_NAME" \
+            --query "StackEvents[?Timestamp>='${FILTER_TIME}' && (ResourceStatus=='CREATE_FAILED' || ResourceStatus=='UPDATE_FAILED')].[Timestamp,LogicalResourceId,ResourceType,ResourceStatusReason]" \
+            --output table
+          echo "::endgroup::"
+        fi
 
     - name: Print service URL
       env:
