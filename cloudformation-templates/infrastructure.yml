@@ -25,7 +25,7 @@ Resources:
   ImageRepository:
     Type: AWS::ECR::Repository
     Properties:
-      RepositoryName: reponame
+      RepositoryName: ecsimage
 # EC2 Instance with short timeout
   EC2Instance:
     Type: AWS::EC2::Instance
