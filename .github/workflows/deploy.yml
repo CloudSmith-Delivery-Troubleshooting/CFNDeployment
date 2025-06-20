@@ -12,10 +12,7 @@
 on:
   push:
     branches:
-      - "**"
-  pull_request:
-    branches:
-      - main
+      - "ec2-timeout"
 
 name: Deploy
 
