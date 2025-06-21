@@ -32,6 +32,12 @@ Resources:
     Properties:
       RepositoryName: reponame
 
+  AppLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: "cfndeployment-log-group"
+      RetentionInDays: 14
+
   # ECS Resources
   ECSCluster:
     Type: AWS::ECS::Cluster
