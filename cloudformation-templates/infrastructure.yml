@@ -25,7 +25,7 @@ Resources:
   ImageRepository:
     Type: AWS::ECR::Repository
     Properties:
-      RepositoryName: reponame
+      RepositoryName: reponame2
 
   ImageRepository2:
     Type: AWS::ECR::Repository
