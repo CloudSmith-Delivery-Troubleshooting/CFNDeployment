@@ -72,7 +72,7 @@ jobs:
       id: infrastructure-stack
       uses: aws-actions/aws-cloudformation-github-deploy@v1
       with:
-        name: ${{ steps.env-name.outputs.environment }}-infra
+        name: ${{ steps.env-name.outputs.environment }}-infra-01
         template: cloudformation-templates/infrastructure.yml
         role-arn: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/github-actions-cloudformation-stack-role
         no-fail-on-empty-changeset: "1"
@@ -85,7 +85,7 @@ jobs:
     - name: Check CloudFormation Stack Status
       if: ${{ always() }}
       run: |
-        STACK_NAME="${{ steps.env-name.outputs.environment }}-infra"
+        STACK_NAME="${{ steps.env-name.outputs.environment }}-infra-01"
         echo "Checking status for stack: $STACK_NAME"
         
         # Get stack status
@@ -165,7 +165,7 @@ jobs:
       id: service-stack
       uses: aws-actions/aws-cloudformation-github-deploy@v1
       with:
-        name: ${{ needs.deploy-infrastructure.outputs.env-name }}-webapp
+        name: ${{ needs.deploy-infrastructure.outputs.env-name }}-webapp-01
         template: cloudformation-templates/service.yml
         role-arn: arn:aws:iam::${{ steps.creds.outputs.aws-account-id }}:role/github-actions-cloudformation-stack-role
         parameter-overrides: >-
@@ -176,7 +176,7 @@ jobs:
     - name: Check Service Stack Status
       if: ${{ always() }}
       run: |
-        STACK_NAME="${{ needs.deploy-infrastructure.outputs.env-name }}-webapp"
+        STACK_NAME="${{ needs.deploy-infrastructure.outputs.env-name }}-webapp-01"
         echo "Checking status for service stack: $STACK_NAME"
         
         # Get stack status
@@ -202,6 +202,6 @@ jobs:
     - name: Show CloudFormation Stack Events on Failure
       if: failure()
       run: |
-        STACK_NAME="${{ steps.env-name.outputs.environment }}-infra"
+        STACK_NAME="${{ steps.env-name.outputs.environment }}-infra-01"
         echo "Fetching failure events for stack: $STACK_NAME"
         aws cloudformation describe-stack-events --stack-name "$STACK_NAME" --query "StackEvents[?ResourceStatus=='CREATE_FAILED'].[LogicalResourceId,ResourceStatusReason]" --output table
