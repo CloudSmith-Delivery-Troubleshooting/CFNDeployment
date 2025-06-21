@@ -27,11 +27,6 @@ Resources:
     Properties:
       RepositoryName: reponame2
 
-  ImageRepository2:
-    Type: AWS::ECR::Repository
-    Properties:
-      RepositoryName: reponame
-
   AppLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
